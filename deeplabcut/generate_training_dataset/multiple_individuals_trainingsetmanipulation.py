@@ -97,6 +97,7 @@ def create_multianimaltraining_dataset(
     num_shuffles=1,
     Shuffles=None,
     df=None,
+    dest_folder="",
     windows2linux=False,
     net_type=None,
     numdigits=2,
@@ -124,6 +125,11 @@ def create_multianimaltraining_dataset(
     df : DataFrame, optional (default=None)
         If None, all labeled data are merged to form the full dataset.
         Otherwise, train and test sets are produced from the data passed in.
+
+    dest_folder : string, optional
+        Folder where the training data will be stored.
+        If unspecified, it is automatically determined by deeplabcut
+        under training-datasets.
 
     windows2linux: bool.
         The annotation files contain path formated according to your operating system. If you label on windows
@@ -155,12 +161,14 @@ def create_multianimaltraining_dataset(
     scorer = cfg["scorer"]
     project_path = cfg["project_path"]
     # Create path for training sets & store data there
-    trainingsetfolder = auxiliaryfunctions.GetTrainingSetFolder(cfg)
-    full_training_path = Path(project_path, trainingsetfolder)
-    auxiliaryfunctions.attempttomakefolder(full_training_path, recursive=True)
+    if not dest_folder:
+        dest_folder = os.path.join(
+            project_path, auxiliaryfunctions.GetTrainingSetFolder(cfg),
+        )
+    auxiliaryfunctions.attempttomakefolder(dest_folder, recursive=True)
 
     if df is None:
-        df = merge_annotateddatasets(cfg, full_training_path, windows2linux)
+        df = merge_annotateddatasets(cfg, dest_folder, windows2linux)
         if df is None:  # When no data have been found...
             return
     df = df[scorer]
@@ -258,7 +266,10 @@ def create_multianimaltraining_dataset(
                     datafilename,
                     metadatafilename,
                 ) = auxiliaryfunctions.GetDataandMetaDataFilenames(
-                    trainingsetfolder, trainFraction, shuffle, cfg
+                    os.path.relpath(dest_folder, project_path),
+                    trainFraction,
+                    shuffle,
+                    cfg,
                 )
                 ################################################################################
                 # Saving metadata and data file (Pickle file)
