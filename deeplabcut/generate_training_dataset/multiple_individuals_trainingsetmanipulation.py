@@ -96,6 +96,7 @@ def create_multianimaltraining_dataset(
     config,
     num_shuffles=1,
     Shuffles=None,
+    df=None,
     windows2linux=False,
     net_type=None,
     numdigits=2,
@@ -119,6 +120,10 @@ def create_multianimaltraining_dataset(
 
     Shuffles: list of shuffles.
         Alternatively the user can also give a list of shuffles (integers!).
+
+    df : DataFrame, optional (default=None)
+        If None, all labeled data are merged to form the full dataset.
+        Otherwise, train and test sets are produced from the data passed in.
 
     windows2linux: bool.
         The annotation files contain path formated according to your operating system. If you label on windows
@@ -154,10 +159,11 @@ def create_multianimaltraining_dataset(
     full_training_path = Path(project_path, trainingsetfolder)
     auxiliaryfunctions.attempttomakefolder(full_training_path, recursive=True)
 
-    Data = merge_annotateddatasets(cfg, full_training_path, windows2linux)
-    if Data is None:
-        return
-    Data = Data[scorer]
+    if df is None:
+        df = merge_annotateddatasets(cfg, full_training_path, windows2linux)
+        if df is None:  # When no data have been found...
+            return
+    df = df[scorer]
 
     def strip_cropped_image_name(path):
         # utility function to split different crops from same image into either train or test!
@@ -166,7 +172,7 @@ def create_multianimaltraining_dataset(
             filename = filename.split("c")[0]
         return os.path.join(head, filename)
 
-    img_names = Data.index.map(strip_cropped_image_name).unique()
+    img_names = df.index.map(strip_cropped_image_name).unique()
 
     if net_type is None:  # loading & linking pretrained models
         net_type = cfg.get("default_net_type", "dlcrnet_ms5")
@@ -225,7 +231,7 @@ def create_multianimaltraining_dataset(
             # Map back to the original indices.
             temp = [re.escape(name) for i, name in enumerate(img_names)
                     if i in test_inds_temp]
-            mask = Data.index.str.contains("|".join(temp))
+            mask = df.index.str.contains("|".join(temp))
             testIndices = np.flatnonzero(mask)
             trainIndices = np.flatnonzero(~mask)
 
@@ -241,7 +247,7 @@ def create_multianimaltraining_dataset(
 
             # Make training file!
             data = format_multianimal_training_data(
-                Data,
+                df,
                 trainIndices,
                 cfg["project_path"],
                 numdigits,
