@@ -6,8 +6,10 @@ RUN apt update -y && \
         freeglut3 freeglut3-dev libnotify-dev git && \
     add-apt-repository ppa:deadsnakes/ppa && \
     apt install -y python3 && \
-    conda update -n base -c defaults conda && \
-    git clone https://github.com/tensorflow/benchmarks.git /tf-benchmarks
+#    conda update -n base -c defaults conda && \
+#    git clone https://github.com/tensorflow/benchmarks.git /tf-benchmarks
 COPY . /DeepLabCut
-RUN conda env update -n=base -f=/DeepLabCut/conda-environments/DLC-GPU.yaml && \
+RUN conda env update -n=base -f=/DeepLabCut/conda-environments/DEEPLABCUT.yaml && \
+RUN 
+... && \
     pip install /DeepLabCut
