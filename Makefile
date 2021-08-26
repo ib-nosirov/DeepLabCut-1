@@ -1,7 +1,7 @@
 PYTHON ?= python3
-IMAGE ?= enho/deeplabcut:2.1.10
+IMAGE ?= enho/deeplabcut:2.2.0.1
 ALLOCATION ?= SD2E-Community
-SIF ?= ./deeplabcut_2_1_10.sif
+SIF ?= ./deeplabcut_2_2_0_1.sif
 
 # ------------------------------- Sanity checks -------------------------------
 
@@ -48,26 +48,4 @@ push: image | docker
 $(SIF):
 	singularity pull $(SIF) docker://$(IMAGE)
 
-sing-dlc-demo: $(SIF) | singularity
-	singularity exec --nv --home $$PWD \
-		-B local_models:/opt/conda/lib/python3.7/site-packages/deeplabcut/pose_estimation_tensorflow/models/pretrained/ \
-		$(SIF) bash -c "cd examples && python3 Demo_labeledexample_Openfield.py"
-
-sing-shell: $(SIF) | singularity
-	singularity shell --nv --home $$PWD \
-		-B local_models:/opt/conda/lib/python3.7/site-packages/deeplabcut/pose_estimation_tensorflow/models/pretrained/ \
-		$(SIF)
-
 sif: $(SIF)
-
-# ----------------------------- Jupyter ---------------------------------------
-
-jupyter-mav2: $(SIF)
-	sbatch -A $(ALLOCATION) scripts/mav2.jupytersing -i $(SIF)
-	sleep 10
-	tail -f jupyter.out
-
-jupyter-frontera: $(SIF)
-	sbatch -A $(ALLOCATION) scripts/frontera.jupytersing -i $(SIF)
-	sleep 10
-	tail -f jupyter.out
